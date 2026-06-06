@@ -2,7 +2,11 @@ name: arch0
 
 services:
   arch0:
-    build: .
+    build:
+      context: .
+      args:
+        PIP_INDEX_URL: ${ARCH0_PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}
+        PIP_TRUSTED_HOST: ${ARCH0_PIP_TRUSTED_HOST:-}
     container_name: arch0
     env_file:
       - path: .env

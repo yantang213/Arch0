@@ -19,9 +19,7 @@ class Settings:
 
     @property
     def requires_auth(self) -> bool:
-        if self.api_token:
-            return True
-        return self.bind_host not in {"127.0.0.1", "localhost", "::1"}
+        return bool(self.api_token)
 
 
 def load_settings() -> Settings:
@@ -34,4 +32,3 @@ def load_settings() -> Settings:
         llm_base_url=os.environ.get("ARCH0_LLM_BASE_URL", "https://api.openai.com/v1"),
         llm_model=os.environ.get("ARCH0_LLM_MODEL", "gpt-4.1-mini"),
     )
-

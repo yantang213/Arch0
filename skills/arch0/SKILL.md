@@ -24,7 +24,7 @@ arch0 doctor
 执行任何归档操作前，先确认：
 
 1. `arch0 --help` 可运行；不可运行时先按「安装或修复」处理
-2. remote machine 已通过 `arch0 setup remote` 配置 `server_url` 和需要的 API token
+2. remote machine 已通过 `arch0 setup remote` 配置 `server_url`；API token 只有在 local Arch0 server 启用时才需要
 3. `arch0 status` 连通性检查通过；失败时先跑 `arch0 doctor`
 4. 待归档内容不包含 secrets、private keys、tokens、passwords、cookies 或 credential material
 
@@ -47,7 +47,7 @@ Arch0 的职责边界：
 
 | Command | 用途 |
 |---|---|
-| `arch0 setup remote` | 在 remote machine 上配置 local Arch0 server URL、API token、sender、default instruction |
+| `arch0 setup remote` | 在 remote machine 上配置 local Arch0 server URL、可选 API token、sender、default instruction |
 | `arch0 status` | 快速检查 config 和 `/healthz` 连通性 |
 | `arch0 doctor` | 诊断 config、HTTP、auth、Tailscale/网络问题 |
 | `arch0 insert <markdown_file>` | 将 Markdown archive 提交给 local Arch0 server |

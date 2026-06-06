@@ -56,7 +56,7 @@ export async function runSetupLocal(
   const serverUrl = normalizeServerUrl(
     await deps.prompter.ask("Arch0 server URL to show remote clients", "http://127.0.0.1:8000")
   );
-  const tokenAnswer = await deps.prompter.ask("Configure API token? yes/no", "yes");
+  const tokenAnswer = await deps.prompter.ask("Configure API token? yes/no", "no");
   const token =
     tokenAnswer.toLowerCase().startsWith("y")
       ? (await deps.prompter.ask("API token (leave blank to generate)", "")).trim() || generateToken()

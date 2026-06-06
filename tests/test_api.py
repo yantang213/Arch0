@@ -133,6 +133,20 @@ class ApiTests(unittest.TestCase):
             )
             self.assertEqual(200, ok.status_code, ok.text)
 
+    def test_auth_not_required_on_non_loopback_host_when_token_absent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp) / "arch-vault"
+            client = TestClient(
+                create_app(
+                    settings=self.make_settings(vault, host="0.0.0.0"),
+                    decision_engine=StaticDecisionEngine(
+                        ArchiveDecision(status="needs_review", project_name=None, confidence="low", reason="test")
+                    ),
+                )
+            )
+            response = client.post("/v0.1/archives", json=self.make_payload())
+            self.assertEqual(200, response.status_code, response.text)
+
     def test_invalid_cmd_type_returns_structured_400(self):
         with tempfile.TemporaryDirectory() as tmp:
             vault = Path(tmp) / "arch-vault"

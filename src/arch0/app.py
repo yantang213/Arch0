@@ -52,8 +52,6 @@ def create_app(
         current: Settings = app.state.settings
         if not current.requires_auth:
             return
-        if not current.api_token:
-            raise HTTPException(status_code=500, detail={"code": "api_token_required"})
         expected = f"Bearer {current.api_token}"
         if authorization != expected:
             raise HTTPException(status_code=401, detail={"code": "unauthorized"})

@@ -1,6 +1,6 @@
 {
   "name": "arch0-cli",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "Thin TypeScript CLI client for Arch0",
   "type": "module",
   "bin": {
@@ -26,4 +26,3 @@
     "node": ">=20"
   }
 }
-

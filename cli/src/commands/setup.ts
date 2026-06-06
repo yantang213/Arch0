@@ -41,9 +41,9 @@ export async function runSetup(
       deps.output.stderr("Error: setup mode must be local or remote");
       return { exitCode: 1 };
     }
-    return resolvedMode === "local"
+    return await (resolvedMode === "local"
       ? runSetupLocal(options, { ...deps, prompter })
-      : runSetupRemote(options, { ...deps, prompter });
+      : runSetupRemote(options, { ...deps, prompter }));
   } finally {
     prompter.close();
   }
@@ -133,4 +133,3 @@ function normalizeMode(value: string): "local" | "remote" | undefined {
 function generateToken(): string {
   return randomBytes(24).toString("base64url");
 }
-

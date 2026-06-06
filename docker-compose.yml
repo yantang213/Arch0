@@ -1,0 +1,24 @@
+name: arch0
+
+services:
+  arch0:
+    build: .
+    container_name: arch0
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ARCH0_HOST: 0.0.0.0
+      ARCH0_PORT: 8000
+      ARCH0_VAULT_DIR: /data/arch-vault
+    ports:
+      - "8989:8000"
+    volumes:
+      - ${ARCH0_HOST_VAULT_DIR:-./Arch0Vault}:/data/arch-vault
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

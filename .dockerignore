@@ -1,0 +1,27 @@
+.git/
+.pytest_cache/
+__pycache__/
+*.pyc
+
+# Local planning/private files
+discussion_with_ai/
+PRD.md
+TECH_DESIGN_*.md
+readme-private.md
+.env
+.env.private
+
+# Runtime data
+arch-vault/
+Arch0Vault/
+
+# Node/CLI build artifacts are not needed in the server image
+node_modules/
+cli/node_modules/
+cli/dist/
+cli/coverage/
+
+# Editor/OS noise
+.DS_Store
+.idea/
+.vscode/

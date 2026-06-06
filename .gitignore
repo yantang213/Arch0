@@ -2,6 +2,9 @@
 discussion_with_ai/
 PRD.md
 TECH_DESIGN_*.md
+readme-private.md
+.env
+.env.private
 
 # Python/runtime artifacts
 __pycache__/
@@ -19,6 +22,7 @@ cli/coverage/
 
 # Arch0 local vault data
 arch-vault/
+Arch0Vault/
 
 # OS/editor noise
 .DS_Store

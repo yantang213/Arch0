@@ -38,6 +38,7 @@ def test_installer_has_expected_bootstrap_controls():
         "node",
         "npm install",
         "npm run build",
+        "reset --hard --quiet",
         "npx -y skills add",
         "arch0 setup remote",
         "arch0 status",

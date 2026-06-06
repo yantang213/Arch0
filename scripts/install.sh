@@ -41,6 +41,10 @@ require_node_20() {
 checkout_repo() {
   if [ -d "$ARCH0_INSTALL_DIR/.git" ]; then
     log "Updating Arch0 repo at $ARCH0_INSTALL_DIR"
+    if [ -n "$(git -C "$ARCH0_INSTALL_DIR" status --porcelain --untracked-files=no)" ]; then
+      log "Discarding local tracked changes in managed install repo"
+      git -C "$ARCH0_INSTALL_DIR" reset --hard --quiet
+    fi
     git -C "$ARCH0_INSTALL_DIR" fetch --quiet origin "$ARCH0_REF"
     git -C "$ARCH0_INSTALL_DIR" checkout --quiet "$ARCH0_REF"
     git -C "$ARCH0_INSTALL_DIR" pull --ff-only --quiet origin "$ARCH0_REF"

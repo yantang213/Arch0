@@ -67,13 +67,15 @@ def parse_index_rows(index_markdown: str) -> dict[str, dict[str, str]]:
         if not line.startswith("| ") or line.startswith("| ---") or "Created At" in line:
             continue
         columns = [unescape_table(part.strip()) for part in line.strip("|").split("|")]
-        if len(columns) != 5:
+        if len(columns) == 5:
+            _created_at, title, abstract, source, path = columns
+        elif len(columns) == 7:
+            _created_at, _modified_at, title, abstract, source, _operation, path = columns
+        else:
             continue
-        _created_at, title, abstract, source, path = columns
         rows[path] = {"title": title, "abstract": abstract, "source": source}
     return rows
 
 
 def unescape_table(value: str) -> str:
     return value.replace("\\|", "|")
-

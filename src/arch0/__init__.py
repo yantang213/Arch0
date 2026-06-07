@@ -1,6 +1,5 @@
-"""Arch0 V0.1 package."""
+"""Arch0 package."""
 
 __all__ = ["__version__"]
 
-__version__ = "0.1.0"
-
+__version__ = "0.18.0"

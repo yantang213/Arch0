@@ -14,7 +14,7 @@ const output: Output = {
 
 export function buildProgram(): Command {
   const program = new Command();
-  program.name("arch0").description("Thin CLI client for Arch0").version("0.16.1");
+  program.name("arch0").description("Thin CLI client for Arch0").version("0.18.0");
   program.option("--config <path>", "config file path");
 
   const setup = program.command("setup").description("configure Arch0 CLI");

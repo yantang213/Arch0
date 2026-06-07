@@ -1,6 +1,6 @@
 import unittest
 
-from arch0.decision_engine import DecisionEngineError, parse_decision
+from arch0.decision_engine import DecisionEngineError, parse_decision, parse_operation_decision
 
 
 class DecisionEngineTests(unittest.TestCase):
@@ -49,7 +49,44 @@ class DecisionEngineTests(unittest.TestCase):
                 """
             )
 
+    def test_parse_valid_updated_operation_decision(self):
+        decision = parse_operation_decision(
+            """
+            {
+              "status": "accepted",
+              "operation": "updated_archive",
+              "project_name": "my-vps-blog",
+              "confidence": "high",
+              "reason": "Updates the existing setup archive.",
+              "abstract": "Adds troubleshooting details.",
+              "target_archive_path": "archives/nginx-https-setup.md",
+              "merged_title": "Nginx HTTPS setup",
+              "merged_content": "# Nginx HTTPS setup\\n\\nMerged content.",
+              "change_summary": "Added troubleshooting details."
+            }
+            """
+        )
+        self.assertEqual("updated_archive", decision.operation)
+        self.assertEqual("archives/nginx-https-setup.md", decision.target_archive_path)
+
+    def test_operation_decision_rejects_invalid_target_path(self):
+        with self.assertRaises(DecisionEngineError):
+            parse_operation_decision(
+                """
+                {
+                  "status": "accepted",
+                  "operation": "updated_archive",
+                  "project_name": "my-vps-blog",
+                  "confidence": "high",
+                  "reason": "Bad target.",
+                  "abstract": "Bad.",
+                  "target_archive_path": "../bad.md",
+                  "merged_content": "# Bad",
+                  "change_summary": "Bad."
+                }
+                """
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
-

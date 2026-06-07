@@ -17,11 +17,14 @@ function captureOutput(): { output: Output; stdout: string[]; stderr: string[] }
 
 const accepted: ArchiveResponse = {
   status: "accepted",
+  operation: "created_archive",
   project_name: "my-vps-blog",
   decision_detail: { confidence: "high", reason: "ok", abstract: "Documents setup." },
   stored_path: "arch-vault/my-vps-blog/archives/title.md",
   index_updated: true,
   audit_logged: true,
+  git_committed: true,
+  git_commit: "abc123",
   warnings: []
 };
 
@@ -62,7 +65,9 @@ describe("insert command", () => {
     );
     expect(result.exitCode).toBe(0);
     expect(capture.stdout.join("\n")).toContain("Status: accepted");
+    expect(capture.stdout.join("\n")).toContain("Operation: created_archive");
     expect(capture.stdout.join("\n")).toContain("Project: my-vps-blog");
+    expect(capture.stdout.join("\n")).toContain("Git commit: abc123");
   });
 
   it("returns nonzero when server_url missing", async () => {
@@ -82,6 +87,7 @@ describe("insert command", () => {
     const rejected: ArchiveResponse = {
       ...accepted,
       status: "rejected",
+      operation: "rejected",
       project_name: null,
       stored_path: null,
       decision_detail: { confidence: "high", reason: "secret" },
@@ -99,4 +105,3 @@ describe("insert command", () => {
     expect(capture.stdout.join("\n")).toContain("Status: rejected");
   });
 });
-

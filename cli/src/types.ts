@@ -17,15 +17,20 @@ export type InsertPayload = {
 
 export type ArchiveResponse = {
   status: "accepted" | "needs_review" | "rejected";
+  operation: "created_archive" | "updated_archive" | "needs_review" | "rejected";
   project_name: string | null;
   decision_detail: {
     confidence: "low" | "medium" | "high";
     reason: string;
     abstract?: string | null;
+    target_archive_path?: string | null;
+    change_summary?: string | null;
   };
   stored_path: string | null;
   index_updated: boolean;
   audit_logged: boolean;
+  git_committed: boolean;
+  git_commit?: string | null;
   warnings: string[];
 };
 
@@ -48,4 +53,3 @@ export type SystemInfo = {
   username: () => string;
   hostname: () => string;
 };
-

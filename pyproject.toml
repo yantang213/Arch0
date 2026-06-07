@@ -1,6 +1,6 @@
 [project]
 name = "arch0"
-version = "0.1.0"
+version = "0.18.0"
 description = "Local-first long-term archive agent for project memory"
 requires-python = ">=3.11"
 dependencies = [

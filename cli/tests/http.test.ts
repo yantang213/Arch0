@@ -28,11 +28,14 @@ describe("http", () => {
   it("inserts archive and parses response", async () => {
     const archiveResponse = {
       status: "accepted",
+      operation: "created_archive",
       project_name: "Project",
       decision_detail: { confidence: "high", reason: "ok", abstract: "summary" },
       stored_path: "arch-vault/Project/archives/title.md",
       index_updated: true,
       audit_logged: true,
+      git_committed: true,
+      git_commit: "abc123",
       warnings: []
     };
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(archiveResponse), { status: 200 }));
@@ -53,4 +56,3 @@ describe("http", () => {
     });
   });
 });
-

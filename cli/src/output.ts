@@ -3,15 +3,27 @@ import { redactConfig } from "./config";
 
 export function formatArchiveResponse(response: ArchiveResponse): string {
   const lines = [`Status: ${response.status}`];
+  lines.push(`Operation: ${response.operation}`);
   if (response.project_name) {
     lines.push(`Project: ${response.project_name}`);
   }
   if (response.stored_path) {
     lines.push(`Stored: ${response.stored_path}`);
   }
+  if (response.git_commit) {
+    lines.push(`Git commit: ${response.git_commit}`);
+  } else {
+    lines.push(`Git committed: ${response.git_committed ? "yes" : "no"}`);
+  }
   lines.push(`Confidence: ${response.decision_detail.confidence}`);
   if (response.decision_detail.abstract) {
     lines.push(`Abstract: ${response.decision_detail.abstract}`);
+  }
+  if (response.decision_detail.target_archive_path) {
+    lines.push(`Target: ${response.decision_detail.target_archive_path}`);
+  }
+  if (response.decision_detail.change_summary) {
+    lines.push(`Change summary: ${response.decision_detail.change_summary}`);
   }
   lines.push(`Reason: ${response.decision_detail.reason}`);
   if (response.warnings.length > 0) {
@@ -63,4 +75,3 @@ export function formatDoctor(input: {
     `Tailscale status: ${input.tailscale.status}`
   ].join("\n");
 }
-

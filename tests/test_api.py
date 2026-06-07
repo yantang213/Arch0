@@ -7,7 +7,18 @@ from fastapi.testclient import TestClient
 from arch0.app import create_app
 from arch0.config import Settings
 from arch0.decision_engine import StaticDecisionEngine
-from arch0.models import ArchiveDecision
+from arch0.models import ArchiveDecision, ArchiveOperationDecision
+
+
+class StaticOperationEngine:
+    def __init__(self, decisions: list[ArchiveOperationDecision]):
+        self.decisions = decisions
+        self.calls = 0
+
+    def decide_operation(self, request, context):
+        decision = self.decisions[self.calls]
+        self.calls += 1
+        return decision
 
 
 class ApiTests(unittest.TestCase):
@@ -59,8 +70,11 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(200, response.status_code, response.text)
             data = response.json()
             self.assertEqual("accepted", data["status"])
+            self.assertEqual("created_archive", data["operation"])
             self.assertEqual("my-vps-blog", data["project_name"])
             self.assertEqual("Documents Nginx HTTPS setup.", data["decision_detail"]["abstract"])
+            self.assertTrue(data["git_committed"])
+            self.assertIsNotNone(data["git_commit"])
             self.assertTrue((vault / "my-vps-blog" / "archives" / "nginx-https-setup.md").exists())
             self.assertEqual(1, engine.calls)
 
@@ -89,7 +103,85 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(200, response.status_code, response.text)
             data = response.json()
             self.assertEqual("needs_review", data["status"])
+            self.assertEqual("needs_review", data["operation"])
             self.assertIsNone(data["project_name"])
+            self.assertTrue((vault / "inbox" / "needs-review" / "nginx-https-setup.md").exists())
+
+    def test_operation_engine_can_update_existing_archive_with_git_commit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp) / "arch-vault"
+            engine = StaticOperationEngine(
+                [
+                    ArchiveOperationDecision(
+                        status="accepted",
+                        operation="created_archive",
+                        project_name="my-vps-blog",
+                        confidence="high",
+                        reason="New project memory.",
+                        abstract="Documents Nginx HTTPS setup.",
+                    ),
+                    ArchiveOperationDecision(
+                        status="accepted",
+                        operation="updated_archive",
+                        project_name="my-vps-blog",
+                        confidence="high",
+                        reason="Updates the same setup document.",
+                        abstract="Adds troubleshooting details.",
+                        target_archive_path="archives/nginx-https-setup.md",
+                        merged_title="Nginx HTTPS setup",
+                        merged_content="# Nginx HTTPS setup\n\nSetup plus troubleshooting details.",
+                        change_summary="Added troubleshooting details.",
+                    ),
+                ]
+            )
+            client = TestClient(create_app(settings=self.make_settings(vault), decision_engine=engine))
+
+            created = client.post("/v0.1/archives", json=self.make_payload())
+            self.assertEqual(200, created.status_code, created.text)
+            updated = client.post("/v0.1/archives", json=self.make_payload())
+            self.assertEqual(200, updated.status_code, updated.text)
+
+            created_data = created.json()
+            updated_data = updated.json()
+            self.assertEqual("created_archive", created_data["operation"])
+            self.assertEqual("updated_archive", updated_data["operation"])
+            self.assertEqual(created_data["stored_path"], updated_data["stored_path"])
+            self.assertTrue(updated_data["git_committed"])
+            self.assertIsNotNone(updated_data["git_commit"])
+            self.assertEqual("Added troubleshooting details.", updated_data["decision_detail"]["change_summary"])
+
+            archive_text = (vault / "my-vps-blog" / "archives" / "nginx-https-setup.md").read_text(encoding="utf-8")
+            self.assertIn("Setup plus troubleshooting details.", archive_text)
+            index_text = (vault / "my-vps-blog" / "index.md").read_text(encoding="utf-8")
+            self.assertIn("created_archive", index_text)
+            self.assertIn("updated_archive", index_text)
+
+    def test_dirty_vault_forces_needs_review_before_operation_engine(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            vault = Path(tmp) / "arch-vault"
+            vault.mkdir(parents=True)
+            (vault / "manual-note.md").write_text("uncommitted manual change\n", encoding="utf-8")
+            engine = StaticOperationEngine(
+                [
+                    ArchiveOperationDecision(
+                        status="accepted",
+                        operation="created_archive",
+                        project_name="my-vps-blog",
+                        confidence="high",
+                        reason="Should not write automatically.",
+                        abstract="Documents Nginx HTTPS setup.",
+                    )
+                ]
+            )
+            client = TestClient(create_app(settings=self.make_settings(vault), decision_engine=engine))
+
+            response = client.post("/v0.1/archives", json=self.make_payload())
+            self.assertEqual(200, response.status_code, response.text)
+            data = response.json()
+            self.assertEqual("needs_review", data["status"])
+            self.assertEqual("needs_review", data["operation"])
+            self.assertEqual(0, engine.calls)
+            self.assertIn("Vault has uncommitted changes.", data["warnings"])
             self.assertTrue((vault / "inbox" / "needs-review" / "nginx-https-setup.md").exists())
 
     def test_secret_rejected_before_decision_engine(self):
@@ -109,7 +201,10 @@ class ApiTests(unittest.TestCase):
             self.assertEqual(200, response.status_code, response.text)
             data = response.json()
             self.assertEqual("rejected", data["status"])
+            self.assertEqual("rejected", data["operation"])
             self.assertIsNone(data["stored_path"])
+            self.assertTrue(data["git_committed"])
+            self.assertIsNotNone(data["git_commit"])
             self.assertEqual(0, engine.calls)
             archive_files = list(vault.glob("**/*.md"))
             self.assertEqual([vault / "audit" / "audit-log.md"], archive_files)

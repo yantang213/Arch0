@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .models import ArchiveDecision, ArchiveRequest
+from .models import ArchiveDecision, ArchiveOperationDecision, ArchiveRequest
 from .validation import ensure_child_path, validate_project_name
 
 
@@ -41,12 +41,50 @@ def archive_to_project(
         project_dir=project_dir,
         project_name=clean_project,
         created_at=now,
+        modified_at=now,
         title=request.archive_title.strip(),
         abstract=decision.abstract or "",
         source=request.send_from_who.strip(),
+        operation="created_archive",
         relative_path=relative,
     )
     return StoredArchive(final_path, final_path.as_posix(), now, now, request.archive_title.strip(), decision.abstract)
+
+
+def update_archive_in_project(
+    *,
+    vault_dir: Path,
+    project_name: str,
+    request: ArchiveRequest,
+    decision: ArchiveOperationDecision,
+) -> StoredArchive:
+    clean_project = validate_project_name(project_name)
+    if not decision.target_archive_path or not decision.merged_content:
+        raise ValueError("updated archive decision must include target path and merged content")
+
+    project_dir = ensure_child_path(vault_dir, vault_dir / clean_project)
+    final_path = ensure_child_path(project_dir, project_dir / decision.target_archive_path)
+    if not final_path.exists():
+        raise FileNotFoundError(f"target archive does not exist: {decision.target_archive_path}")
+
+    existing_text = final_path.read_text(encoding="utf-8")
+    created_at = read_front_matter_value(existing_text, "created_at") or _now_iso()
+    modified_at = _now_iso()
+    title = (decision.merged_title or request.archive_title).strip()
+    write_archive_file(final_path, decision.merged_content, created_at=created_at, modified_at=modified_at)
+    relative = final_path.relative_to(project_dir).as_posix()
+    update_index(
+        project_dir=project_dir,
+        project_name=clean_project,
+        created_at=created_at,
+        modified_at=modified_at,
+        title=title,
+        abstract=decision.change_summary or decision.abstract or "",
+        source=request.send_from_who.strip(),
+        operation="updated_archive",
+        relative_path=relative,
+    )
+    return StoredArchive(final_path, final_path.as_posix(), created_at, modified_at, title, decision.abstract)
 
 
 def archive_to_needs_review(
@@ -81,9 +119,11 @@ def update_index(
     project_dir: Path,
     project_name: str,
     created_at: str,
+    modified_at: str,
     title: str,
     abstract: str,
     source: str,
+    operation: str,
     relative_path: str,
 ) -> None:
     index_path = project_dir / "index.md"
@@ -91,13 +131,14 @@ def update_index(
         index_path.write_text(
             f"# Project: {project_name}\n\n"
             "## Archived Documents\n\n"
-            "| Created At | Title | Abstract | Source | Path |\n"
-            "| --- | --- | --- | --- | --- |\n",
+            "| Created At | Modified At | Title | Abstract | Source | Operation | Path |\n"
+            "| --- | --- | --- | --- | --- | --- | --- |\n",
             encoding="utf-8",
         )
     row = (
-        f"| {escape_table(created_at)} | {escape_table(title)} | {escape_table(abstract)} | "
-        f"{escape_table(source)} | {escape_table(relative_path)} |\n"
+        f"| {escape_table(created_at)} | {escape_table(modified_at)} | {escape_table(title)} | "
+        f"{escape_table(abstract)} | {escape_table(source)} | {escape_table(operation)} | "
+        f"{escape_table(relative_path)} |\n"
     )
     with index_path.open("a", encoding="utf-8") as handle:
         handle.write(row)
@@ -155,6 +196,19 @@ def escape_table(value: str) -> str:
     return value.replace("\n", " ").replace("|", "\\|").strip()
 
 
+def read_front_matter_value(markdown: str, key: str) -> str | None:
+    if not markdown.startswith("---\n"):
+        return None
+    end = markdown.find("\n---\n", 4)
+    if end == -1:
+        return None
+    prefix = f"{key}:"
+    for line in markdown[4:end].splitlines():
+        if not line.startswith(prefix):
+            continue
+        return line.split(":", 1)[1].strip().strip('"')
+    return None
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
